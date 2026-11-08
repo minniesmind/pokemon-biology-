@@ -1,0 +1,260 @@
+/* ============================================================
+   POKÉ-PROFESSOR — Plant Hormones GCSE Adventure
+   ============================================================ */
+
+:root{
+  --poke-red:#e3350d;
+  --poke-dark:#2a2a3a;
+  --poke-blue:#3b5ba5;
+  --poke-blue-dark:#2a4178;
+  --poke-yellow:#ffcb05;
+  --poke-yellow-dark:#e8b400;
+  --grass:#4caf50;
+  --grass-dark:#2e7d32;
+  --card:#ffffff;
+  --ink:#222;
+  --muted:#6b7280;
+  --ok:#2e9e4f;
+  --bad:#e3350d;
+  --shadow:0 6px 0 rgba(0,0,0,.18);
+  --radius:16px;
+  --pix:'Press Start 2P', 'Trebuchet MS', system-ui, sans-serif;
+  --body:'Nunito', 'Trebuchet MS', system-ui, -apple-system, sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--body);
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 45%),
+    linear-gradient(160deg,#5aa9e6 0%,#3b5ba5 55%,#2a4178 100%);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* little scrolling "grass field" footer vibe */
+body::before{
+  content:"";position:fixed;left:0;right:0;bottom:0;height:70px;
+  background:linear-gradient(180deg,transparent,rgba(46,125,50,.55));
+  pointer-events:none;z-index:0;
+}
+
+.wrap{max-width:960px;margin:0 auto;padding:18px 16px 90px;position:relative;z-index:1}
+
+/* ---------- Pixel headings ---------- */
+.pix{font-family:var(--pix);line-height:1.5;letter-spacing:.5px}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--poke-red);
+  border:4px solid #fff;
+  border-radius:var(--radius);
+  padding:12px 16px;margin-bottom:16px;
+  box-shadow:var(--shadow);
+  flex-wrap:wrap;
+}
+.pokeball{
+  width:34px;height:34px;border-radius:50%;flex:none;
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 6px, #333 6px 9px, transparent 9px),
+    linear-gradient(#ff1f1f 0 50%, #fff 50% 100%);
+  border:3px solid #222;position:relative;
+  animation:wobble 2.4s ease-in-out infinite;
+}
+@keyframes wobble{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.topbar h1{font-family:var(--pix);color:#fff;font-size:13px;margin:0;flex:1 1 220px;text-shadow:2px 2px 0 #00000055}
+.topbar .trainer{color:#fff;font-size:.85rem;text-align:right}
+.topbar .trainer b{color:var(--poke-yellow)}
+
+/* ---------- Stat / XP bar ---------- */
+.hud{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  background:#ffffffee;border-radius:var(--radius);
+  padding:10px 14px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.hud .lvl{font-family:var(--pix);font-size:11px;color:var(--poke-blue)}
+.xpbar{flex:1 1 180px;height:16px;background:#dfe3ea;border-radius:10px;overflow:hidden;border:2px solid #b7bcc7}
+.xpbar > span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--poke-yellow),#ffd84d);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.badgestrip{display:flex;gap:6px;flex-wrap:wrap}
+.badgestrip .b{font-size:1.1rem;filter:grayscale(1) opacity(.35);transition:.3s}
+.badgestrip .b.earned{filter:none;transform:scale(1.15)}
+
+/* ---------- Panels ---------- */
+.panel{
+  background:var(--card);border-radius:var(--radius);
+  padding:20px;box-shadow:var(--shadow);margin-bottom:16px;
+  border:3px solid #ffffff;
+  animation:pop .35s ease;
+}
+@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.hidden{display:none !important}
+
+h2.section{font-family:var(--pix);font-size:15px;color:var(--poke-blue);margin:.2em 0 .8em}
+h3{color:var(--grass-dark);margin:.4em 0}
+p.lead{font-size:1.05rem;color:#333}
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:var(--pix);font-size:11px;cursor:pointer;
+  border:none;border-radius:12px;padding:14px 18px;
+  background:var(--poke-yellow);color:#4a3b00;
+  box-shadow:0 4px 0 var(--poke-yellow-dark);
+  transition:transform .08s, box-shadow .08s;
+  text-align:center;line-height:1.5;
+}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--poke-yellow-dark)}
+.btn.blue{background:var(--poke-blue);color:#fff;box-shadow:0 4px 0 var(--poke-blue-dark)}
+.btn.grass{background:var(--grass);color:#fff;box-shadow:0 4px 0 var(--grass-dark)}
+.btn.red{background:var(--poke-red);color:#fff;box-shadow:0 4px 0 #a3240a}
+.btn.ghost{background:#eef1f6;color:#333;box-shadow:0 4px 0 #c7ccd6}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+/* ---------- Start screen ---------- */
+.hero{text-align:center}
+.hero .big{font-family:var(--pix);font-size:22px;color:var(--poke-yellow);text-shadow:3px 3px 0 #00000055,-1px -1px 0 #3b5ba5;margin:6px 0}
+.hero .sub{color:#fff;font-size:1.1rem;margin-bottom:18px}
+.input{
+  font-family:var(--body);font-size:1.1rem;padding:12px 14px;border-radius:12px;
+  border:3px solid var(--poke-blue);width:min(320px,90%);text-align:center;
+}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:18px 0}
+.starter{
+  background:linear-gradient(180deg,#f3fbef,#e3f3dd);
+  border:3px solid var(--grass);border-radius:var(--radius);
+  padding:16px;cursor:pointer;transition:.15s;text-align:center;
+}
+.starter:hover{transform:translateY(-4px)}
+.starter.sel{outline:4px solid var(--poke-yellow);transform:translateY(-4px)}
+.starter .face{font-size:3rem}
+.starter .nm{font-family:var(--pix);font-size:11px;color:var(--grass-dark);margin:8px 0}
+.starter .bl{font-size:.9rem;color:#4b5563}
+
+/* ---------- Gym map ---------- */
+.gymgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.gymcard{
+  position:relative;overflow:hidden;
+  border-radius:var(--radius);padding:18px;cursor:pointer;
+  color:#fff;border:3px solid #ffffff;box-shadow:var(--shadow);
+  transition:transform .15s;
+}
+.gymcard:hover{transform:translateY(-5px)}
+.gymcard.g0{background:linear-gradient(145deg,#f7b733,#fc4a1a)}
+.gymcard.g1{background:linear-gradient(145deg,#56ab2f,#a8e063)}
+.gymcard.g2{background:linear-gradient(145deg,#8e2de2,#4a00e0)}
+.gymcard.g3{background:linear-gradient(145deg,#2193b0,#6dd5ed)}
+.gymcard.g4{background:linear-gradient(145deg,#ee9ca7,#c0392b)}
+.gymcard .glabel{font-family:var(--pix);font-size:12px;text-shadow:2px 2px 0 #00000055}
+.gymcard .gleader{font-size:.85rem;opacity:.95;margin-top:6px}
+.gymcard .gtag{font-size:.95rem;margin-top:10px;font-style:italic}
+.gymcard .gmeta{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:.8rem}
+.chip{background:#00000033;padding:4px 10px;border-radius:999px}
+.gymcard .done{position:absolute;top:10px;right:12px;font-size:1.6rem}
+.tierflag{display:inline-block;background:#ffffff33;border:1px solid #ffffff88;padding:2px 8px;border-radius:999px;font-size:.72rem;margin-left:6px}
+
+/* ---------- Lesson (Pokédex) cards ---------- */
+.dex{display:grid;gap:14px}
+.dexcard{
+  border-radius:var(--radius);border:3px solid var(--poke-blue);
+  background:#f7fbff;overflow:hidden;
+}
+.dexcard .head{background:var(--poke-blue);color:#fff;padding:10px 14px;font-weight:800}
+.dexcard .body{padding:14px 16px}
+.poke-note{
+  background:#fff8dd;border-left:5px solid var(--poke-yellow-dark);
+  padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:.98rem;
+}
+.poke-note b{color:#8a6d00}
+.facts{margin:0;padding-left:20px}
+.facts li{margin:7px 0;line-height:1.5}
+.terms{margin-top:12px;display:grid;gap:8px}
+.term{background:#eef6ff;border-radius:8px;padding:8px 12px;font-size:.92rem}
+.term b{color:var(--poke-blue-dark)}
+
+.progressdots{display:flex;gap:6px;justify-content:center;margin:14px 0}
+.progressdots i{width:10px;height:10px;border-radius:50%;background:#cbd5e1}
+.progressdots i.on{background:var(--poke-yellow-dark)}
+
+/* ---------- Quiz battle ---------- */
+.battle{text-align:center}
+.arena{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:10px;
+  background:linear-gradient(180deg,#bfe3ff,#d8f5c8);
+  border-radius:var(--radius);padding:16px;margin-bottom:14px;border:3px solid #fff;
+}
+.mon{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px}
+.mon .face{font-size:2.6rem}
+.mon .nm{font-size:.8rem;font-weight:800}
+.hpwrap{width:120px}
+.hplabel{font-family:var(--pix);font-size:8px;color:#444;text-align:left}
+.hp{height:12px;background:#d4d4d4;border-radius:8px;overflow:hidden;border:2px solid #999}
+.hp > span{display:block;height:100%;background:linear-gradient(90deg,#2e9e4f,#7bd88f);transition:width .5s}
+.hp.low > span{background:linear-gradient(90deg,#e3350d,#ff7a5c)}
+.vs{font-family:var(--pix);font-size:12px;color:var(--poke-red)}
+
+.qbox{background:#fff;border:3px solid var(--poke-dark);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.qtext{font-size:1.12rem;font-weight:800;margin-bottom:12px}
+.opts{display:grid;gap:10px}
+.opt{
+  text-align:left;background:#eef1f6;border:3px solid #cdd3de;border-radius:12px;
+  padding:13px 16px;cursor:pointer;font-size:1.02rem;transition:.12s;font-weight:700;color:#333;
+}
+.opt:hover{border-color:var(--poke-blue);background:#e7f0ff}
+.opt.correct{background:#d8f5de;border-color:var(--ok);color:#166534}
+.opt.wrong{background:#ffe0da;border-color:var(--bad);color:#9b1c0b}
+.opt:disabled{cursor:default}
+.feedback{margin-top:12px;padding:12px;border-radius:10px;font-weight:700;display:none}
+.feedback.show{display:block;animation:pop .3s}
+.feedback.good{background:#d8f5de;color:#166534}
+.feedback.meh{background:#ffe9d6;color:#9a3412}
+.qcount{font-family:var(--pix);font-size:9px;color:var(--muted);margin-bottom:8px}
+
+/* ---------- Flashcards ---------- */
+.flashwrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.flashcard{
+  width:min(560px,96%);height:260px;perspective:1200px;cursor:pointer;
+}
+.flashinner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flashcard.flipped .flashinner{transform:rotateY(180deg)}
+.flashface{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:24px;text-align:center;border:4px solid #fff;box-shadow:var(--shadow);
+}
+.flashface .lab{font-family:var(--pix);font-size:9px;position:absolute;top:12px;left:14px;opacity:.8}
+.flashface .txt{font-size:1.15rem;font-weight:800;line-height:1.5}
+.flashface .hint{position:absolute;bottom:12px;font-size:.78rem;opacity:.75}
+.flashfront{background:linear-gradient(160deg,#3b5ba5,#2a4178);color:#fff}
+.flashback{background:linear-gradient(160deg,#4caf50,#2e7d32);color:#fff;transform:rotateY(180deg)}
+.tierpill{position:absolute;top:12px;right:14px;font-size:.7rem;background:#ffffff33;padding:2px 8px;border-radius:999px}
+
+/* ---------- Toast / level up ---------- */
+.toast{
+  position:fixed;left:50%;top:24px;transform:translateX(-50%) translateY(-120%);
+  background:var(--poke-dark);color:#fff;padding:14px 22px;border-radius:14px;
+  border:3px solid var(--poke-yellow);font-family:var(--pix);font-size:11px;
+  z-index:50;transition:transform .4s cubic-bezier(.2,1.4,.5,1);box-shadow:var(--shadow);
+  max-width:90vw;text-align:center;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+.confetti i{position:absolute;width:10px;height:14px;top:-20px;opacity:.9;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+.center{text-align:center}
+.small{font-size:.85rem;color:var(--muted)}
+.footnote{color:#ffffffcc;font-size:.8rem;text-align:center;margin-top:10px}
+
+@media (max-width:560px){
+  .topbar h1{font-size:10px}
+  .hero .big{font-size:16px}
+  h2.section{font-size:12px}
+  .arena{flex-direction:row;}
+  .mon{min-width:80px}
+}
