@@ -1,24 +1,95 @@
 /* ============================================================
-   PLANT HORMONES — "POKÉ-PROFESSOR" GCSE BIOLOGY ADVENTURE
-   AQA GCSE Biology content (Save My Exams notes + flashcards)
-   All facts below are exam-accurate. The Pokémon wrapper is
-   just there to make it stick.
+   POKÉ-PROFESSOR — GCSE Biology Adventure (multi-topic)
+   AQA GCSE Biology content. Pokémon wrapper = memory hook.
+
+   QUESTION TYPES used by the quiz engine:
+     mc         single correct option       {answer: idx}
+     multi      several correct options      {answers: [idx,...]}
+     match      match left items to right    {pairs: [[L,R],...]}
+     order      drag items into order        {items: [...correct order...]}
+     categorise drag items into buckets      {buckets:[...], items:[[txt,bucketIdx],...]}
+     label      drag labels onto a diagram   {svg, zones:[{x,y,answer}]}
    ============================================================ */
 
-const GAME_DATA = {
+/* ---- shared "starter" Pokémon ---- */
+const STARTERS = [
+  { id: "bulba",  name: "Budbasaur", emoji: "🌱", blurb: "A seed-type rookie who soaks up the sun." },
+  { id: "oddish", name: "Rootish",   emoji: "🪴", blurb: "Keeps its roots in the soil. Steady and tough." },
+  { id: "char",   name: "Pyroheart", emoji: "🔥", blurb: "A fiery heart with blazing circulation." },
+  { id: "squirt", name: "Bubblung",  emoji: "💧", blurb: "Breathes easy — a master of gas exchange." }
+];
 
-  /* ---- Starter "Grass Pokémon" the player picks ---- */
-  starters: [
-    { id: "bulba",  name: "Budbasaur",  emoji: "🌱", blurb: "A seed-type rookie. Loves soaking up sunlight — a natural at phototropism." },
-    { id: "oddish", name: "Rootish",    emoji: "🪴", blurb: "Keeps its roots firmly in the soil. Master of gravitropism." },
-    { id: "bell",   name: "Sproutle",   emoji: "🌿", blurb: "A bendy shoot that always leans toward the light. Full of auxin energy." }
-  ],
+/* ============================================================
+   DIAGRAM HELPERS (SVG strings, viewBox 0 0 100 100)
+   Kept schematic and clear, original artwork (no copyright).
+   ============================================================ */
 
-  /* ---- The 5 Gyms (one per exam topic) ---- */
+const SVG_ALVEOLUS = `
+<svg viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet">
+  <circle cx="26" cy="35" r="20" fill="#ffe3e3" stroke="#e3350d" stroke-width="1.5"/>
+  <circle cx="26" cy="35" r="20" fill="none" stroke="#ff9a9a" stroke-width="0.6" stroke-dasharray="2 2"/>
+  <path d="M46 20 q18 -6 34 5 q6 12 -4 24 q-16 8 -30 -2" fill="none" stroke="#c0392b" stroke-width="3"/>
+  <path d="M46 24 q16 -4 30 5 q5 10 -4 20 q-14 7 -26 -2" fill="none" stroke="#3b5ba5" stroke-width="3"/>
+  <path d="M40 30 L50 30" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#ar)"/>
+  <path d="M50 44 L40 44" stroke="#8a6d00" stroke-width="1.5" marker-end="url(#ar)"/>
+  <defs><marker id="ar" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+    <path d="M0 0 L6 3 L0 6 z" fill="#333"/></marker></defs>
+  <text x="26" y="36" font-size="5" text-anchor="middle" fill="#7a1a0a">air</text>
+</svg>`;
+
+const SVG_HEART = `
+<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+  <rect x="14" y="16" width="34" height="33" rx="6" fill="#ffd9d9" stroke="#c0392b" stroke-width="1.5"/>
+  <rect x="52" y="16" width="34" height="33" rx="6" fill="#dbe4ff" stroke="#3b5ba5" stroke-width="1.5"/>
+  <rect x="14" y="53" width="34" height="34" rx="6" fill="#ffc2c2" stroke="#c0392b" stroke-width="1.5"/>
+  <rect x="52" y="53" width="34" height="34" rx="6" fill="#c2d2ff" stroke="#3b5ba5" stroke-width="4"/>
+  <line x1="50" y1="14" x2="50" y2="89" stroke="#555" stroke-width="1" stroke-dasharray="3 2"/>
+  <rect x="26" y="4" width="6" height="12" fill="#3b5ba5"/>
+  <rect x="40" y="4" width="6" height="12" fill="#c0392b"/>
+  <rect x="56" y="4" width="6" height="12" fill="#c0392b"/>
+  <rect x="70" y="4" width="6" height="12" fill="#3b5ba5"/>
+  <text x="31" y="90" font-size="4.5" text-anchor="middle" fill="#555">(viewer's left = patient's RIGHT)</text>
+</svg>`;
+
+const SVG_VESSELS = `
+<svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">
+  <circle cx="20" cy="30" r="17" fill="#e3350d" stroke="#7a1a0a" stroke-width="1"/>
+  <circle cx="20" cy="30" r="5" fill="#fff"/>
+  <circle cx="52" cy="30" r="15" fill="#5a78c0" stroke="#2a4178" stroke-width="1"/>
+  <circle cx="52" cy="30" r="9" fill="#fff"/>
+  <circle cx="80" cy="30" r="6" fill="#ff9a9a" stroke="#c0392b" stroke-width="0.8"/>
+  <circle cx="80" cy="30" r="3.5" fill="#fff"/>
+</svg>`;
+
+const SVG_SHOOT = `
+<svg viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet">
+  <rect x="20" y="62" width="60" height="10" fill="#8a5a2b" rx="2"/>
+  <path d="M50 62 Q50 40 62 26" fill="none" stroke="#2e7d32" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="64" cy="24" rx="7" ry="4" fill="#4caf50"/>
+  <g fill="#ffcb05">
+    <path d="M6 14 l8 2 l-8 2 z"/><path d="M6 24 l8 2 l-8 2 z"/><path d="M6 34 l8 2 l-8 2 z"/>
+  </g>
+  <text x="9" y="9" font-size="5" fill="#8a6d00">☀</text>
+  <circle cx="44" cy="40" r="2.2" fill="#e3350d"/><circle cx="45" cy="47" r="2.2" fill="#e3350d"/>
+  <circle cx="47" cy="54" r="2.2" fill="#e3350d"/>
+</svg>`;
+
+/* ============================================================
+   TOPICS
+   ============================================================ */
+
+const TOPICS = [
+
+/* ============================================================
+   TOPIC A — PLANT HORMONES  (Hormone Highlands)
+   ============================================================ */
+{
+  id: "plants",
+  name: "Hormone Highlands",
+  subject: "AQA GCSE Biology · Plant Hormones",
+  emoji: "🌿",
+  blurb: "Grass-type country: tropisms, auxin, and how farmers use plant hormones.",
   gyms: [
-    /* =========================================================
-       GYM 1 — TROPISMS
-       ========================================================= */
     {
       id: "tropisms",
       name: "Tropism Town Gym",
@@ -27,16 +98,16 @@ const GAME_DATA = {
       type: "Grass",
       tier: "Foundation + Higher",
       tagline: "Which way do I grow?",
-      intro: "Every Grass-type knows the golden rule: grow toward what you need. Shoots chase the sun, roots dive for the ground. Learn the two tropisms and you've won half the battle.",
+      intro: "Every Grass-type knows the rule: grow toward what you need. Shoots chase the sun, roots dive for the ground.",
       lessons: [
         {
           title: "What is a tropism?",
-          poke: "Think of a tropism like a Pokémon's instinct to move toward food or water — except plants can't walk, so they GROW in a direction instead.",
+          poke: "A tropism is like a Pokémon's instinct to move toward food — but plants can't walk, so they GROW in a direction instead.",
           facts: [
-            "Plants make chemicals called <b>plant hormones</b> (mainly <b>auxins</b>) to coordinate and control growth.",
-            "A <b>tropism</b> is a growth response to a stimulus (something in the environment).",
+            "Plants make <b>plant hormones</b> (mainly <b>auxins</b>) to coordinate and control growth.",
+            "A <b>tropism</b> = a growth response to a stimulus.",
             "<b>Phototropism</b> = growth in response to <b>light</b>.",
-            "<b>Gravitropism</b> (also called <b>geotropism</b>) = growth in response to <b>gravity</b>."
+            "<b>Gravitropism</b> (a.k.a. <b>geotropism</b>) = growth in response to <b>gravity</b>."
           ],
           terms: [
             ["Phototropism", "Growth in response to light."],
@@ -46,72 +117,44 @@ const GAME_DATA = {
           ]
         },
         {
-          title: "Shoots vs Roots — who grows where?",
-          poke: "Shoots are the 'solar-panel' Pokémon that want sunlight for photosynthesis. Roots are the 'anchor' Pokémon that want water, minerals and grip.",
+          title: "Shoots vs Roots",
+          poke: "Shoots are 'solar-panel' Pokémon chasing sunlight. Roots are 'anchor' Pokémon chasing water and grip.",
           facts: [
-            "<b>Shoots</b> grow <b>up</b>, away from gravity and towards light — so leaves absorb more light → more photosynthesis → more glucose.",
-            "Shoots are therefore <b>positively phototropic</b> (toward light) and <b>negatively gravitropic</b> (away from gravity).",
-            "<b>Roots</b> grow <b>down</b>, away from light and towards gravity — to anchor the plant and absorb water and minerals from the soil.",
-            "Roots are therefore <b>negatively phototropic</b> (away from light) and <b>positively gravitropic</b> (toward gravity)."
+            "<b>Shoots</b> grow up, toward light & away from gravity → more light → more photosynthesis → more glucose.",
+            "Shoots = <b>positively phototropic</b> + <b>negatively gravitropic</b>.",
+            "<b>Roots</b> grow down, away from light & toward gravity → anchor the plant, absorb water & minerals.",
+            "Roots = <b>negatively phototropic</b> + <b>positively gravitropic</b>."
           ],
           terms: [
-            ["Shoot response", "Positive phototropism + negative gravitropism (grows up/toward light)."],
-            ["Root response", "Negative phototropism + positive gravitropism (grows down/toward gravity)."]
+            ["Shoot response", "Positive phototropism + negative gravitropism."],
+            ["Root response", "Negative phototropism + positive gravitropism."]
           ]
         }
       ],
       quiz: [
-        {
-          q: "Phototropism is a plant's growth response to which stimulus?",
-          options: ["Gravity", "Light", "Water", "Temperature"],
-          answer: 1,
-          explain: "Photo = light. Phototropism is growth in response to light."
-        },
-        {
-          q: "Gravitropism is also known as…",
-          options: ["Phototropism", "Hydrotropism", "Geotropism", "Thermotropism"],
-          answer: 2,
-          explain: "Gravitropism and geotropism mean the same thing — growth in response to gravity."
-        },
-        {
-          q: "A plant shoot shows which combination of responses?",
-          options: [
-            "Positive phototropism, positive gravitropism",
-            "Positive phototropism, negative gravitropism",
-            "Negative phototropism, positive gravitropism",
-            "Negative phototropism, negative gravitropism"
-          ],
-          answer: 1,
-          explain: "Shoots grow TOWARDS light (positive phototropism) and AWAY from gravity (negative gravitropism)."
-        },
-        {
-          q: "Why is it an advantage for shoots to grow towards the light?",
-          options: [
-            "To anchor the plant",
-            "To absorb more water",
-            "So leaves absorb more light for more photosynthesis",
-            "To avoid being eaten"
-          ],
-          answer: 2,
-          explain: "More light → more photosynthesis → more glucose produced for the plant."
-        },
-        {
-          q: "Roots grow downwards. This is because they are…",
-          options: [
-            "Positively gravitropic and negatively phototropic",
-            "Negatively gravitropic and positively phototropic",
-            "Positively phototropic only",
-            "Not affected by gravity"
-          ],
-          answer: 0,
-          explain: "Roots grow towards gravity (positive gravitropism) and away from light (negative phototropism) to anchor the plant and absorb water & minerals."
-        }
+        { type:"mc", q:"Phototropism is a growth response to which stimulus?",
+          options:["Gravity","Light","Water","Temperature"], answer:1,
+          explain:"Photo = light. Phototropism is growth in response to light." },
+        { type:"mc", q:"Gravitropism is also known as…",
+          options:["Phototropism","Hydrotropism","Geotropism","Thermotropism"], answer:2,
+          explain:"Gravitropism and geotropism both mean growth in response to gravity." },
+        { type:"categorise", q:"Sort each response into the correct part of the plant.",
+          buckets:["Shoot","Root"],
+          items:[["Grows towards light",0],["Grows away from light",1],
+                 ["Grows away from gravity",0],["Grows towards gravity",1],
+                 ["Positive phototropism",0],["Positive gravitropism",1]],
+          explain:"Shoots: toward light, away from gravity. Roots: away from light, toward gravity." },
+        { type:"mc", q:"Why is it an advantage for shoots to grow towards light?",
+          options:["To anchor the plant","To absorb water","So leaves absorb more light for more photosynthesis","To avoid being eaten"], answer:2,
+          explain:"More light → more photosynthesis → more glucose." },
+        { type:"match", q:"Match each term to its meaning.",
+          pairs:[["Phototropism","Growth response to light"],
+                 ["Gravitropism","Growth response to gravity"],
+                 ["Positive response","Grows towards the stimulus"],
+                 ["Negative response","Grows away from the stimulus"]],
+          explain:"Know these four definitions cold — they unlock every tropism question." }
       ]
     },
-
-    /* =========================================================
-       GYM 2 — AUXIN
-       ========================================================= */
     {
       id: "auxin",
       name: "Auxin Arena Gym",
@@ -120,107 +163,70 @@ const GAME_DATA = {
       type: "Energy",
       tier: "Foundation + Higher",
       tagline: "The hormone behind the bend.",
-      intro: "Auxin is the signature move of every Grass-type. It's a growth hormone with a twist: it POWERS UP cells in shoots but POWERS DOWN cells in roots. Master how it moves and you'll explain every bend.",
+      intro: "Auxin is the signature move of every Grass-type: it POWERS UP cells in shoots but POWERS DOWN cells in roots.",
       lessons: [
         {
           title: "Where auxin is made & what it does",
-          poke: "Auxin is like an energy move charged up at the TIP of a shoot or root, then sent to the cells just behind the tip.",
+          poke: "Auxin is an energy move charged at the TIP, then sent to the cells just behind the tip.",
           facts: [
-            "Auxins are made in the <b>tips</b> of shoots and roots, then <b>diffuse</b> to the cells just behind the tip.",
-            "Only the <b>region behind the tip</b> can grow by cell division and <b>cell elongation</b>.",
-            "In <b>shoots</b>, auxin <b>promotes (speeds up) cell elongation</b>: more auxin = more growth.",
-            "In <b>roots</b>, auxin <b>inhibits (slows down) cell elongation</b>: more auxin = less growth.",
-            "This opposite effect is the key idea — same hormone, different response."
+            "Auxins are made in the <b>tips</b> of shoots and roots, then <b>diffuse</b> back to the cells behind the tip.",
+            "Only the <b>region behind the tip</b> grows (cell division + <b>cell elongation</b>).",
+            "In <b>shoots</b>, auxin <b>promotes</b> cell elongation (more auxin = more growth).",
+            "In <b>roots</b>, auxin <b>inhibits</b> cell elongation (more auxin = less growth)."
           ],
           terms: [
-            ["Cell elongation", "Cells getting longer — how the shoot/root region behind the tip grows."],
-            ["Promote (shoots)", "Auxin makes shoot cells elongate faster."],
-            ["Inhibit (roots)", "Auxin makes root cells elongate slower."]
+            ["Cell elongation", "Cells getting longer — how the region behind the tip grows."],
+            ["Promote (shoots)", "Auxin speeds up shoot-cell elongation."],
+            ["Inhibit (roots)", "Auxin slows down root-cell elongation."]
           ]
         },
         {
-          title: "Phototropism — bending towards light",
-          poke: "Picture a Sunflora standing beside a window. Light hits one side only, so auxin dodges to the shady side and 'levels up' those cells — the plant leans toward the light.",
+          title: "Phototropism — bending to light",
+          poke: "A Sunflora by a window: light hits one side, so auxin dodges to the shady side and levels those cells up.",
           facts: [
-            "If light hits the tip <b>evenly from all sides</b>, auxin spreads evenly and the shoot grows straight up.",
-            "If light comes <b>mainly from one side</b>, auxin builds up on the <b>shaded side</b>.",
-            "The shaded-side cells get more auxin → <b>elongate faster</b> than the sunny side.",
-            "Uneven growth makes the shoot <b>bend and grow towards the light</b> — positive phototropism."
+            "Even light all around → auxin even → shoot grows straight.",
+            "Light from one side → auxin builds up on the <b>shaded side</b>.",
+            "Shaded cells get more auxin → <b>elongate faster</b> → shoot <b>bends towards the light</b>."
           ],
           terms: [
-            ["Unequal distribution", "Auxin collects more on one side → uneven growth → bending."],
-            ["Shaded side (shoot)", "More auxin → faster elongation → shoot bends toward light."]
+            ["Unequal distribution", "Auxin collects on one side → uneven growth → bending."]
           ]
         },
         {
           title: "Gravitropism — the side-on plant",
-          poke: "Lay a seedling on its side like a knocked-over Pokémon. Gravity pulls auxin to the LOWER side. In shoots that side powers up; in roots it powers down.",
+          poke: "Lay a seedling on its side: gravity pulls auxin to the LOWER side. Shoots power up there; roots power down.",
           facts: [
-            "If a shoot or root is placed on its side, auxin accumulates on the <b>lower side</b> (because of gravity).",
-            "The uppermost side ends up with a <b>lower auxin concentration</b>.",
-            "In <b>shoots</b>: the lower side grows <b>faster</b> (auxin promotes growth) → shoot bends and grows <b>upwards</b>.",
-            "In <b>roots</b>: the lower side grows <b>slower</b> (auxin inhibits growth) → root bends and grows <b>downwards</b>.",
-            "Shoot distribution is affected by light AND gravity; root distribution is mainly affected by gravity alone."
+            "On its side, auxin gathers on the <b>lower side</b>; the top side has less.",
+            "In <b>shoots</b>: lower side grows faster → shoot bends <b>upwards</b>.",
+            "In <b>roots</b>: lower side grows slower (auxin inhibits) → root bends <b>downwards</b>."
           ],
           terms: [
-            ["Lower side (shoot)", "More auxin → grows faster → shoot curves upward."],
-            ["Lower side (root)", "More auxin → grows slower → root curves downward."]
+            ["Lower side (shoot)", "More auxin → faster growth → curves up."],
+            ["Lower side (root)", "More auxin → slower growth → curves down."]
           ]
         }
       ],
       quiz: [
-        {
-          q: "Where in the plant is auxin made?",
-          options: ["In the leaves", "In the tips of shoots and roots", "In the flowers", "In the oldest cells"],
-          answer: 1,
-          explain: "Auxin is produced in the tips, then diffuses to the cells just behind the tip."
-        },
-        {
-          q: "What effect does auxin have on cells in the SHOOTS?",
-          options: ["Inhibits elongation", "Stimulates/promotes cell elongation", "Has no effect", "Kills the cells"],
-          answer: 1,
-          explain: "In shoots, auxin promotes cell elongation — more auxin means more growth."
-        },
-        {
-          q: "True or False: Auxin inhibits the growth of cells in plant roots.",
-          options: ["True", "False"],
-          answer: 0,
-          explain: "True. In roots auxin inhibits cell elongation, so more auxin = less growth."
-        },
-        {
-          q: "A shoot is lit strongly from the left. Where does auxin build up?",
-          options: ["The lit (left) side", "The shaded (right) side", "The tip only", "It stays even"],
-          answer: 1,
-          explain: "Auxin accumulates on the shaded side, so those cells elongate faster and the shoot bends toward the light."
-        },
-        {
-          q: "A seedling is laid on its side in the dark. In the ROOT, the lower side has more auxin, so it…",
-          options: [
-            "Grows faster, bending the root upwards",
-            "Grows slower, bending the root downwards",
-            "Dies off completely",
-            "Is unaffected"
-          ],
-          answer: 1,
-          explain: "In roots auxin inhibits growth, so the auxin-rich lower side grows slower and the root curves downward (toward gravity)."
-        },
-        {
-          q: "Why does unequal distribution of auxin cause bending?",
-          options: [
-            "It changes the colour of the plant",
-            "It makes one side grow at a different rate to the other",
-            "It stops photosynthesis",
-            "It adds water to one side"
-          ],
-          answer: 1,
-          explain: "Unequal auxin = unequal growth rates on each side = the shoot or root bends."
-        }
+        { type:"mc", q:"Where is auxin made?",
+          options:["In the leaves","In the tips of shoots and roots","In the flowers","In the oldest cells"], answer:1,
+          explain:"Auxin is produced in the tips, then diffuses to cells just behind the tip." },
+        { type:"mc", q:"What does auxin do to cells in the SHOOTS?",
+          options:["Inhibits elongation","Promotes cell elongation","Nothing","Kills them"], answer:1,
+          explain:"In shoots auxin promotes cell elongation — more auxin = more growth." },
+        { type:"mc", q:"True or False: auxin inhibits growth of cells in roots.",
+          options:["True","False"], answer:0,
+          explain:"True. In roots, auxin inhibits elongation, so more auxin = less growth." },
+        { type:"label", q:"Drag the labels onto this shoot bending in one-sided light.",
+          svg: SVG_SHOOT,
+          zones:[ {x:12,y:30,answer:"Light direction"},
+                  {x:40,y:60,answer:"Auxin (shaded side)"},
+                  {x:70,y:22,answer:"Shoot bends to light"} ],
+          explain:"Light comes from one side; auxin builds on the shaded side; those cells grow faster so the shoot bends toward the light." },
+        { type:"mc", q:"A seedling lies on its side in the dark. In the ROOT the lower side has more auxin, so it…",
+          options:["Grows faster, bending root up","Grows slower, bending root down","Dies","Is unaffected"], answer:1,
+          explain:"Auxin inhibits root growth, so the auxin-rich lower side grows slower and the root curves downward." }
       ]
     },
-
-    /* =========================================================
-       GYM 3 — OTHER HORMONES (HIGHER TIER)
-       ========================================================= */
     {
       id: "hormones",
       name: "Hormone Hideout Gym",
@@ -229,65 +235,45 @@ const GAME_DATA = {
       type: "Higher Tier",
       tier: "Higher Tier only",
       tagline: "Auxin isn't the only one.",
-      intro: "Higher-Tier trainers only! Beyond auxin, plants run two more hormone 'moves': Gibberellins and Ethene. Learn what each one triggers.",
+      intro: "Higher-Tier trainers only! Two more hormone 'moves': Gibberellins and Ethene.",
       lessons: [
         {
           title: "Gibberellins",
-          poke: "Gibberellins are the 'wake-up & bloom' move — they kick a sleeping seed into action and help the plant flower and fruit.",
+          poke: "The 'wake-up & bloom' move — kicks a sleeping seed awake and helps the plant flower and fruit.",
           facts: [
-            "Gibberellins are important in <b>initiating seed germination</b> (the seed starting to grow).",
-            "They also help <b>induce flowering</b>.",
+            "Gibberellins <b>initiate seed germination</b>.",
+            "They help <b>induce flowering</b>.",
             "They help the <b>growth of fruit</b>."
           ],
-          terms: [
-            ["Germination", "When a seed starts to grow — gibberellins get it going."],
-            ["Flowering & fruit", "Gibberellins induce flowering and support fruit growth."]
-          ]
+          terms: [["Germination", "A seed starting to grow — gibberellins trigger it."]]
         },
         {
           title: "Ethene",
-          poke: "Ethene is a GAS move — invisible, drifts through the air, and tells fruit it's time to ripen.",
+          poke: "A GAS move — drifts through the air and tells fruit it's time to ripen.",
           facts: [
             "Ethene is a <b>gas</b> released by plants.",
-            "It controls <b>cell division</b> and the <b>ripening of fruits</b>.",
-            "Both gibberellins and ethene are used commercially (see the Industry Island Gym)."
+            "It controls <b>cell division</b> and the <b>ripening of fruit</b>."
           ],
-          terms: [
-            ["Ethene", "A gas hormone that controls cell division and fruit ripening."]
-          ]
+          terms: [["Ethene", "A gas hormone controlling cell division & fruit ripening."]]
         }
       ],
       quiz: [
-        {
-          q: "Which hormone initiates seed germination? (Higher Tier)",
-          options: ["Auxin", "Ethene", "Gibberellins", "Insulin"],
-          answer: 2,
-          explain: "Gibberellins initiate seed germination."
-        },
-        {
-          q: "Ethene is best described as…",
-          options: ["A liquid fertiliser", "A gas that ripens fruit", "A type of auxin", "A root hormone"],
-          answer: 1,
-          explain: "Ethene is a gas that controls cell division and the ripening of fruit."
-        },
-        {
-          q: "True or False: Ethene prevents fruit ripening. (Higher Tier)",
-          options: ["True", "False"],
-          answer: 1,
-          explain: "False. Ethene CAUSES fruit ripening. Ripening can be slowed by inhibiting ethene production."
-        },
-        {
-          q: "Besides germination, gibberellins also help to…",
-          options: ["Induce flowering and fruit growth", "Make roots grow down", "Cool the plant", "Produce chlorophyll"],
-          answer: 0,
-          explain: "Gibberellins induce flowering and support the growth of fruit."
-        }
+        { type:"mc", q:"Which hormone initiates seed germination? (Higher)",
+          options:["Auxin","Ethene","Gibberellins","Insulin"], answer:2,
+          explain:"Gibberellins initiate seed germination." },
+        { type:"mc", q:"Ethene is best described as…",
+          options:["A liquid fertiliser","A gas that ripens fruit","A type of auxin","A root hormone"], answer:1,
+          explain:"Ethene is a gas controlling cell division & fruit ripening." },
+        { type:"mc", q:"True or False: ethene prevents fruit ripening. (Higher)",
+          options:["True","False"], answer:1,
+          explain:"False — ethene CAUSES ripening. Ripening is slowed by inhibiting ethene." },
+        { type:"match", q:"Match each plant hormone to a key job.",
+          pairs:[["Auxin","Controls tropisms (bending)"],
+                 ["Gibberellins","Initiate seed germination"],
+                 ["Ethene","Ripens fruit"]],
+          explain:"Auxin = tropisms; gibberellins = germination/flowering/fruit growth; ethene = ripening." }
       ]
     },
-
-    /* =========================================================
-       GYM 4 — REQUIRED PRACTICAL
-       ========================================================= */
     {
       id: "practical",
       name: "Practical Plateau Gym",
@@ -296,122 +282,49 @@ const GAME_DATA = {
       type: "Skills",
       tier: "Foundation + Higher",
       tagline: "Prove it with an experiment.",
-      intro: "A real trainer tests their theory. This gym is the Required Practical: investigating how light and gravity affect newly germinated seedlings. The secret weapon? A spinning gadget called a clinostat.",
+      intro: "The Required Practical: how light and gravity affect newly germinated seedlings — using a clinostat.",
       lessons: [
         {
-          title: "The clinostat — the anti-gravity spin move",
-          poke: "A clinostat is like a slow spinning platform. By rotating the seedling, gravity pulls equally on every side — so it CANCELS OUT the one-sided effect of gravity.",
+          title: "The clinostat",
+          poke: "A slow spinning platform: it rotates the seedling so gravity pulls equally on all sides — cancelling gravity's one-sided effect.",
           facts: [
-            "<b>Aim:</b> investigate the effect of light or gravity on the growth of newly germinated seedlings.",
-            "A <b>clinostat</b> rotates slowly so gravity acts <b>equally on all sides</b>, cancelling out the one-sided effect of gravity.",
-            "This lets you control gravity when testing light, or compare growth with and without a one-sided gravity effect."
+            "<b>Aim:</b> investigate the effect of light or gravity on newly germinated seedlings.",
+            "A <b>clinostat</b> rotates slowly so gravity acts <b>equally on all sides</b> (cancels its one-sided effect)."
           ],
-          terms: [
-            ["Clinostat", "A device that slowly rotates a seedling so gravity acts equally on all sides (cancels its effect)."]
-          ]
+          terms: [["Clinostat", "Rotates a seedling so gravity acts equally on all sides."]]
         },
         {
-          title: "Investigating GRAVITY",
-          poke: "Put the seedlings in a dark box so light can't interfere — only gravity is on the battlefield.",
+          title: "The two investigations",
+          poke: "Dark box = only gravity on the battlefield. Side-light box = only light on the battlefield.",
           facts: [
-            "Set up petri dishes with seeds and let them germinate.",
-            "Attach one dish on its <b>side</b> to a support (gravity acts on one side).",
-            "Attach a second dish to a <b>clinostat</b> (gravity cancelled).",
-            "Place both in a <b>light-proof box</b> (complete darkness) so light can't affect the direction of growth; leave ~2 days.",
-            "<b>Result:</b> on the clinostat, roots and shoots grow straight out in whatever direction they were placed (no gravitropic response) because gravity's effect is cancelled."
+            "<b>Gravity:</b> one dish on its side, one on a clinostat, both in a <b>light-proof box</b>; observe growth after ~2 days.",
+            "On the clinostat, roots & shoots grow straight out (no gravitropic response).",
+            "<b>Light:</b> damp cotton wool, equal germinated seeds; compare one-sided light vs darkness; measure height at start and after ~2 days; calculate <b>mean height increase</b>.",
+            "Measure curved seedlings with string + a ruler."
           ],
           terms: [
-            ["Light-proof box", "Keeps seedlings in darkness so only gravity affects growth direction."]
-          ]
-        },
-        {
-          title: "Investigating LIGHT",
-          poke: "Now light is the challenger. One dish gets light from one side only; the other gets darkness or all-round light.",
-          facts: [
-            "Add damp cotton wool to two petri dishes and set up equal numbers of germinated seeds in each.",
-            "Give each dish a different light condition, e.g. light from <b>one side</b> (box with a slit + lamp) vs <b>complete darkness</b>, or <b>unidirectional</b> light vs light from <b>all directions</b>.",
-            "Measure the height of each seedling at the start, leave ~2 days, then measure again.",
-            "Use a ruler for straight seedlings; use string + a ruler for curved seedlings. Record appearance as labelled biological drawings.",
-            "Calculate the <b>mean height increase</b> for each dish."
-          ],
-          terms: [
-            ["Mean height increase", "The average growth per dish — your main result."],
-            ["Measuring curves", "Use string along the curve, then measure the string with a ruler."]
-          ]
-        },
-        {
-          title: "Variables (nail these for marks!)",
-          poke: "Control variables are the 'fair fight' rules — keep everything the same except the one thing you're testing.",
-          facts: [
-            "<b>Independent variable:</b> the direction of light (or the direction of gravity) — the thing you change.",
-            "<b>Dependent variable:</b> the length and/or direction of growth of the new roots and shoots — the thing you measure.",
-            "<b>Control variables:</b> temperature, volume/availability of water (how damp the cotton wool is), plant species, and the type/size/age of the seedlings.",
-            "When testing light, also control the direction of gravity."
-          ],
-          terms: [
-            ["Independent variable", "What you change (direction of light or gravity)."],
-            ["Dependent variable", "What you measure (length/direction of growth of roots & shoots)."],
+            ["Independent variable", "Direction of light (or gravity) — what you change."],
+            ["Dependent variable", "Length/direction of growth of roots & shoots — what you measure."],
             ["Control variables", "Temperature, water, species, age/size of seedlings, direction of gravity."]
           ]
         }
       ],
       quiz: [
-        {
-          q: "What does a clinostat do?",
-          options: [
-            "Adds light to the seedlings",
-            "Rotates slowly so gravity acts equally on all sides (cancels gravity's effect)",
-            "Heats the seedlings",
-            "Measures seedling height"
-          ],
-          answer: 1,
-          explain: "A clinostat rotates slowly so gravity acts equally on all sides, cancelling out its one-sided effect."
-        },
-        {
-          q: "Why are seedlings kept in a light-proof box when investigating gravity?",
-          options: [
-            "To keep them warm",
-            "So that light cannot affect the direction of growth (only gravity does)",
-            "To speed up germination",
-            "To stop water evaporating"
-          ],
-          answer: 1,
-          explain: "Darkness removes light as a variable, so only gravity affects the direction of growth."
-        },
-        {
-          q: "In this investigation, what is the DEPENDENT variable?",
-          options: [
-            "The direction of gravity",
-            "The temperature",
-            "The length and/or direction of growth of roots and shoots",
-            "The type of seed"
-          ],
-          answer: 2,
-          explain: "You measure the length/direction of growth — that is the dependent variable. The direction of gravity/light is the independent variable."
-        },
-        {
-          q: "Which of these is a control variable for the light investigation?",
-          options: ["Direction of light", "Temperature", "Height increase", "Which way seedlings bend"],
-          answer: 1,
-          explain: "Temperature must be kept the same. Others to control: water, species, age/size of seedlings, and direction of gravity."
-        },
-        {
-          q: "How should you measure the height of a CURVED seedling?",
-          options: [
-            "Guess it",
-            "A ruler held straight across",
-            "A piece of string along the curve, then measure the string with a ruler",
-            "Weigh it"
-          ],
-          answer: 2,
-          explain: "Lay string along the curve, then measure the length of string with a ruler."
-        }
+        { type:"mc", q:"What does a clinostat do?",
+          options:["Adds light","Rotates slowly so gravity acts equally on all sides","Heats the seedlings","Measures height"], answer:1,
+          explain:"It cancels gravity's one-sided effect by rotating the seedling." },
+        { type:"mc", q:"Why keep seedlings in a light-proof box when testing gravity?",
+          options:["To keep them warm","So light can't affect growth direction","To speed germination","To stop evaporation"], answer:1,
+          explain:"Darkness removes light as a variable so only gravity affects direction." },
+        { type:"multi", q:"Select ALL the control variables for the light investigation.",
+          options:["Temperature","Direction of light","Water availability","Species of plant","Age/size of seedlings","Length of new growth"],
+          answers:[0,2,3,4],
+          explain:"Control: temperature, water, species, age/size (and direction of gravity). Direction of light = independent; length of growth = dependent." },
+        { type:"mc", q:"How do you measure the height of a CURVED seedling?",
+          options:["Guess it","A straight ruler","String along the curve, then measure the string","Weigh it"], answer:2,
+          explain:"Lay string along the curve, then measure the string with a ruler." }
       ]
     },
-
-    /* =========================================================
-       GYM 5 — USES OF PLANT HORMONES (HIGHER TIER)
-       ========================================================= */
     {
       id: "uses",
       name: "Industry Island Gym",
@@ -420,124 +333,381 @@ const GAME_DATA = {
       type: "Higher Tier",
       tier: "Higher Tier only",
       tagline: "Hormones at work in the real world.",
-      intro: "Final gym, Higher-Tier only! Farmers and gardeners use plant hormones as real tools — weed killers, rooting powders, ripening control and more. Learn each use and why it matters.",
+      intro: "Final plant gym, Higher-Tier only! Farmers use hormones as real tools.",
       lessons: [
         {
-          title: "Uses of AUXINS",
-          poke: "Auxin is a versatile move: as a weed killer it's super-effective against broad-leaved weeds, but as rooting powder it helps new plants spring up.",
+          title: "Auxins & Ethene at work",
+          poke: "Auxin as a weed killer is super-effective vs broad-leaved weeds; ethene is the ripening gas you can turn up or down.",
           facts: [
-            "<b>Selective weed killers:</b> auxins damage the growth of <b>broad-leaved</b> weeds while leaving <b>narrow-leaved</b> crops (grasses & cereals) to grow normally.",
-            "This stops weeds competing with crops for space and nutrients, protecting yields.",
-            "<b>Rooting powder:</b> dip the cut tips of cuttings in auxins to encourage rapid root development → cheap clones of a desirable plant.",
-            "<b>Tissue culture:</b> auxins promote growth of scraped cells to produce clones in a petri dish, later grown in soil.",
-            "<b>Downside:</b> everyday use of weed killers can reduce <b>biodiversity</b> — weeds are food/habitat for other organisms."
+            "<b>Auxins — selective weed killers:</b> kill broad-leaved weeds but spare narrow-leaved crops (grasses/cereals).",
+            "<b>Auxins — rooting powder:</b> dip cuttings to grow roots fast → cheap clones. Also used in <b>tissue culture</b>.",
+            "<b>Ethene:</b> controls fruit ripening in storage/transport — inhibit it to delay ripening, add it to encourage ripening.",
+            "Everyday weed-killer use can reduce <b>biodiversity</b>."
           ],
           terms: [
-            ["Selective weed killer", "Kills broad-leaved weeds but not narrow-leaved crops."],
-            ["Rooting powder", "Auxins that make cuttings grow roots fast."],
-            ["Tissue culture", "Growing clones from a few cells using auxins."]
+            ["Selective weed killer", "Kills broad-leaved weeds, not narrow-leaved crops."],
+            ["Rooting powder / tissue culture", "Auxins that make cuttings/cells grow into clones."]
           ]
         },
         {
-          title: "Uses of ETHENE",
-          poke: "Ethene is the ripening gas. Turn it up to ripen fruit on the shop shelf; block it to keep fruit hard for transport.",
+          title: "Gibberellins at work",
+          poke: "The 'grow on demand' move: wake seeds, force flowers, bulk up fruit.",
           facts: [
-            "Ethene is used in the food industry to <b>control ripening of fruit</b> during storage and transport.",
-            "It's better to transport <b>unripe</b> fruit — ripe fruit is softer and spoils/damages more easily.",
-            "Ripening can be <b>delayed</b> by inhibiting ethene production (or removing ethene from the air around the fruit).",
-            "Ripening can be <b>encouraged</b> (e.g. at the supermarket) by releasing artificial ethene gas."
+            "<b>End seed dormancy</b> → promote germination.",
+            "<b>Promote flowering</b> regardless of weather.",
+            "<b>Increase fruit size.</b>"
+          ],
+          terms: [["Gibberellins (uses)", "End dormancy, promote flowering, increase fruit size."]]
+        }
+      ],
+      quiz: [
+        { type:"mc", q:"Auxin weed killers kill which plants?",
+          options:["Narrow-leaved crops","Broad-leaved weeds (sparing crops)","All plants","Only trees"], answer:1,
+          explain:"They damage broad-leaved weeds while narrow-leaved crops grow normally." },
+        { type:"mc", q:"To keep fruit firm during long transport you should…",
+          options:["Add lots of ethene","Inhibit/remove ethene to delay ripening","Add gibberellins","Add auxin"], answer:1,
+          explain:"Inhibiting ethene delays ripening, so fruit stays firm." },
+        { type:"categorise", q:"Sort each commercial use under the hormone responsible.",
+          buckets:["Auxin","Ethene","Gibberellins"],
+          items:[["Selective weed killer",0],["Rooting powder for cuttings",0],
+                 ["Ripening fruit on demand",1],["Increasing fruit size",2],["Ending seed dormancy",2]],
+          explain:"Auxin → weed killer + rooting powder; ethene → ripening; gibberellins → dormancy/flowering/fruit size." },
+        { type:"multi", q:"Select ALL genuine commercial uses of gibberellins. (Higher)",
+          options:["End seed dormancy","Promote flowering","Increase fruit size","Kill broad-leaved weeds","Ripen bananas"],
+          answers:[0,1,2],
+          explain:"Gibberellins: dormancy, flowering, fruit size. Weed-killing = auxin; ripening = ethene." }
+      ]
+    }
+  ],
+  flashcards: [
+    { tier:"F", q:"Why do plants produce plant hormones?", a:"To coordinate and control growth responses." },
+    { tier:"F", q:"Define phototropism.", a:"The directional growth of plants in response to light, letting shoots grow towards light to optimise photosynthesis." },
+    { tier:"F", q:"Define geotropism (gravitropism).", a:"The directional growth response in relation to gravity; roots grow down, shoots grow up." },
+    { tier:"F", q:"True/False: unequal auxin distribution causes uneven growth in shoots AND roots.", a:"True. Uneven auxin (from light in shoots, gravity in roots) causes uneven growth." },
+    { tier:"F", q:"What does auxin do to cells in the shoots?", a:"It promotes (stimulates) cell elongation." },
+    { tier:"F", q:"How does auxin cause phototropism?", a:"Auxin builds up on the shaded side, making those cells elongate faster, so the shoot bends toward light." },
+    { tier:"F", q:"True/False: auxin inhibits growth of root cells.", a:"True. Auxin gathers on the lower side of roots, inhibiting growth so roots bend down." },
+    { tier:"H", q:"What do gibberellins do in seeds? (Higher)", a:"They initiate seed germination." },
+    { tier:"F", q:"In the gravity-on-seedlings practical, what is the dependent variable?", a:"The length and/or direction of growth of the new roots and shoots." },
+    { tier:"F", q:"Which variables are controlled when testing light on seedlings?", a:"Direction of gravity, temperature, water availability, and type/size/age of seedlings." },
+    { tier:"F", q:"Why use a clinostat?", a:"It cancels out gravity's effect so you can isolate light, or compare growth with/without gravity." },
+    { tier:"H", q:"True/False: auxins can be used as weedkillers. (Higher)", a:"True — they kill broad-leaved weeds while narrow-leaved crops grow normally." },
+    { tier:"H", q:"How do auxins help make new plants? (Higher)", a:"In rooting powder (cuttings grow roots) and tissue culture (promote growth)." },
+    { tier:"H", q:"True/False: ethene prevents ripening. (Higher)", a:"False — ethene CAUSES ripening; slow it by inhibiting ethene." },
+    { tier:"H", q:"How are gibberellins used in industry? (Higher)", a:"End dormancy (germination), promote flowering, increase fruit size." }
+  ]
+},
+
+/* ============================================================
+   TOPIC B — CVS & RESPIRATORY  (Circulation Caverns)
+   ============================================================ */
+{
+  id: "cvs",
+  name: "Circulation Caverns",
+  subject: "AQA GCSE Biology · Cardiovascular & Respiratory System",
+  emoji: "🫀",
+  blurb: "Fire & Water country: the lungs, the heart, blood vessels and blood.",
+  gyms: [
+    {
+      id: "lungs",
+      name: "Alveoli Atoll Gym",
+      leader: "Leader Breeze",
+      badge: "🫁 Breath Badge",
+      type: "Air",
+      tier: "Foundation",
+      tagline: "Where air meets blood.",
+      intro: "Gas exchange central! Trace the air from windpipe to the tiny alveoli, and learn why they're perfect exchange surfaces.",
+      lessons: [
+        {
+          title: "The airway — mouth to alveoli",
+          poke: "Think of the airway like a branching cave system: one big tunnel splitting into thousands of tiny chambers.",
+          facts: [
+            "<b>Trachea (windpipe):</b> connects mouth & nose to the lungs; lined with mucus + <b>ciliated cells</b> to trap/remove pathogens.",
+            "<b>Bronchi:</b> tubes branching off the trachea — one bronchus to each lung (also mucus + cilia).",
+            "<b>Bronchioles:</b> smaller tubes branching off, connecting to each alveolus.",
+            "<b>Alveoli</b> (singular alveolus): tiny air sacs where <b>gas exchange</b> happens by diffusion."
           ],
           terms: [
-            ["Delay ripening", "Inhibit/remove ethene so fruit stays firm for transport."],
-            ["Encourage ripening", "Add ethene gas to ripen fruit when it's ready to sell."]
+            ["Trachea", "Windpipe linking mouth/nose to the lungs."],
+            ["Alveoli", "Tiny air sacs — the gas exchange surface."],
+            ["Ciliated cells", "Hair-like cells that sweep mucus (and trapped pathogens) away."]
           ]
         },
         {
-          title: "Uses of GIBBERELLINS",
-          poke: "Gibberellins are the 'grow on demand' move — wake up seeds, force flowers, and bulk up fruit.",
+          title: "Adaptations for gas exchange",
+          poke: "Every adaptation has ONE goal: speed up diffusion. Link each feature to that job for the marks.",
           facts: [
-            "<b>End seed dormancy:</b> high gibberellin levels promote seed germination (dormancy normally ends after cold/dry conditions, water intake and warmth).",
-            "<b>Promote flowering</b> regardless of the weather conditions the plant is in.",
-            "<b>Increase fruit size</b> — higher gibberellin levels promote fruit development and growth."
+            "<b>Many alveoli</b> → large <b>surface area</b> for diffusion.",
+            "<b>Walls one cell thick</b> → short <b>diffusion distance</b> (never say 'thin walls'!).",
+            "<b>Surrounded by capillaries</b> → good blood supply keeps the <b>concentration gradient</b> steep.",
+            "<b>Continuous ventilation</b> → constant fresh O₂ in, CO₂ out, maintaining the gradient.",
+            "Alveoli are also moist, so gases can dissolve."
           ],
           terms: [
-            ["End dormancy", "Gibberellins trigger germination when you want it."],
-            ["Promote flowering", "Flowering on demand, whatever the weather."],
-            ["Bigger fruit", "More gibberellin → larger fruit."]
+            ["Large surface area", "Many alveoli = more room for diffusion."],
+            ["Short diffusion distance", "Walls one cell thick."],
+            ["Concentration gradient", "Kept steep by good blood supply + ventilation."]
           ]
         }
       ],
       quiz: [
+        { type:"mc", q:"Where does gas exchange take place in the lungs?",
+          options:["Trachea","Bronchi","Alveoli","Diaphragm"], answer:2,
+          explain:"The alveoli (tiny air sacs) are the gas exchange surface." },
+        { type:"order", q:"Put the airway in order, from where air enters to where gas exchange happens.",
+          items:["Trachea","Bronchi","Bronchioles","Alveoli"],
+          explain:"Trachea → bronchi → bronchioles → alveoli." },
+        { type:"multi", q:"Select ALL adaptations that make alveoli good at gas exchange.",
+          options:["Large surface area","Walls one cell thick","Thick muscular walls","Good blood supply (capillaries)","Continuous ventilation","No blood supply"],
+          answers:[0,1,3,4],
+          explain:"Large SA, one-cell-thick walls, good capillary blood supply, and ventilation all speed diffusion. Thick walls / no blood supply would slow it." },
+        { type:"label", q:"Label this alveolus and its capillary.",
+          svg: SVG_ALVEOLUS,
+          zones:[ {x:26,y:50,answer:"Alveolus (air sac)"},
+                  {x:78,y:18,answer:"Capillary"},
+                  {x:55,y:28,answer:"Oxygen into blood"},
+                  {x:33,y:62,answer:"Carbon dioxide into alveolus"} ],
+          explain:"O₂ diffuses from the alveolus into the blood; CO₂ diffuses from the blood into the alveolus to be breathed out." },
+        { type:"mc", q:"Which phrase gets the mark when describing alveolar walls?",
+          options:["Thin cell walls","Walls one cell thick","Thick walls","No walls"], answer:1,
+          explain:"Say 'walls one cell thick' — 'thin cell walls' is marked wrong by AQA." }
+      ]
+    },
+    {
+      id: "heart",
+      name: "Double-Pump Dojo Gym",
+      leader: "Leader Cardia",
+      badge: "❤️ Pulse Badge",
+      type: "Fire",
+      tier: "Foundation + Higher",
+      tagline: "Two circuits, one rhythm.",
+      intro: "The heart is a double pump. Learn its four chambers, the one-way path of blood, and the pacemaker that sets the beat.",
+      lessons: [
         {
-          q: "Auxins used as selective weed killers kill which plants?",
-          options: [
-            "Narrow-leaved crops",
-            "Broad-leaved weeds (sparing narrow-leaved crops)",
-            "All plants equally",
-            "Only trees"
+          title: "Double circulation & the four chambers",
+          poke: "The heart is a dual-type Pokémon running TWO circuits at once — one loop to the lungs, one to the body.",
+          facts: [
+            "A <b>double circulatory system</b>: blood passes through the heart <b>twice</b> per full trip around the body.",
+            "<b>Right side</b> → lungs (<b>pulmonary</b> circuit) and carries <b>deoxygenated</b> blood.",
+            "<b>Left side</b> → body (<b>systemic</b> circuit) and carries <b>oxygenated</b> blood.",
+            "Four chambers: two upper <b>atria</b> (receive blood) and two lower <b>ventricles</b> (pump blood out).",
+            "Benefit: lungs get blood at low pressure (protects capillaries); body gets a strong second push; oxy & deoxy blood never mix."
           ],
-          answer: 1,
-          explain: "They damage broad-leaved weeds while narrow-leaved crops (grasses/cereals) grow normally."
+          terms: [
+            ["Atria", "Upper chambers — receive blood and pass it to the ventricles."],
+            ["Ventricles", "Lower chambers — pump blood out to lungs/body."],
+            ["Double circulation", "Blood passes through the heart twice per body circuit."]
+          ]
         },
         {
-          q: "How can auxins help produce many clones of a desirable plant?",
-          options: [
-            "By ripening its fruit",
-            "As rooting powder on cuttings / in tissue culture to promote growth",
-            "By killing it",
-            "By making it flower"
+          title: "The vessels & the pathway of blood",
+          poke: "Veins bring blood IN, arteries take it AWAY. Follow the one-way route through the heart like a racetrack.",
+          facts: [
+            "Into heart (veins): <b>vena cava</b> (from body), <b>pulmonary vein</b> (from lungs).",
+            "Out of heart (arteries): <b>aorta</b> (to body), <b>pulmonary artery</b> (to lungs).",
+            "Path: vena cava → <b>right atrium</b> → valve → <b>right ventricle</b> → pulmonary artery → lungs → pulmonary vein → <b>left atrium</b> → valve → <b>left ventricle</b> → aorta → body.",
+            "<b>Coronary arteries</b> supply the heart muscle itself with oxygenated blood."
           ],
-          answer: 1,
-          explain: "Auxins in rooting powder make cuttings grow roots fast, and in tissue culture promote growth of cloned cells."
+          terms: [
+            ["Vena cava", "Big vein returning deoxygenated blood from the body."],
+            ["Aorta", "Big artery carrying oxygenated blood to the body."],
+            ["Coronary arteries", "Supply the heart muscle with oxygenated blood."]
+          ]
         },
         {
-          q: "To keep fruit firm during long-distance transport, you should…",
-          options: [
-            "Add lots of ethene",
-            "Inhibit/remove ethene to delay ripening",
-            "Add gibberellins",
-            "Add auxin"
+          title: "Adaptations & the pacemaker",
+          poke: "The left ventricle is the 'buffed-up' chamber. The pacemaker is the heart's internal metronome.",
+          facts: [
+            "Ventricle walls are thicker than atria (pump at higher pressure).",
+            "The <b>left ventricle</b> has the thickest wall — it pumps blood all around the body.",
+            "<b>Valves</b> prevent backflow; a muscle <b>wall (septum)</b> stops oxy/deoxy mixing.",
+            "The <b>pacemaker</b> (cells in the wall of the <b>right atrium</b>) sends electrical impulses that set heart rate.",
+            "Faulty pacemaker → irregular heartbeat → an <b>artificial pacemaker</b> (implanted device) corrects it."
           ],
-          answer: 1,
-          explain: "Inhibiting or removing ethene delays ripening, so fruit stays firm and is less easily damaged."
-        },
-        {
-          q: "Which hormone is used to end seed dormancy, promote flowering and increase fruit size?",
-          options: ["Auxin", "Ethene", "Gibberellins", "Adrenaline"],
-          answer: 2,
-          explain: "Gibberellins end dormancy, promote flowering regardless of weather, and increase fruit size."
-        },
-        {
-          q: "What is a negative effect of using weed killers everyday?",
-          options: [
-            "Crops grow too fast",
-            "It can reduce biodiversity (weeds are food/habitat for other organisms)",
-            "Fruit ripens too soon",
-            "Seeds never germinate"
-          ],
-          answer: 1,
-          explain: "Weeds are a food source and habitat for other organisms, so destroying them can harm the ecosystem and reduce biodiversity."
+          terms: [
+            ["Left ventricle", "Thickest wall — pumps blood around the whole body."],
+            ["Pacemaker", "Cells in the right atrium wall that control heart rate."],
+            ["Valves", "Prevent backflow — keep blood moving one way."]
+          ]
         }
+      ],
+      quiz: [
+        { type:"mc", q:"In a double circulatory system, blood passes through the heart…",
+          options:["Once per body circuit","Twice per body circuit","Three times","Never"], answer:1,
+          explain:"Twice — once for the pulmonary (lung) circuit and once for the systemic (body) circuit." },
+        { type:"label", q:"Label the four chambers of the heart. (Remember: viewer's left = patient's right!)",
+          svg: SVG_HEART,
+          zones:[ {x:31,y:30,answer:"Right atrium"},
+                  {x:69,y:30,answer:"Left atrium"},
+                  {x:31,y:68,answer:"Right ventricle"},
+                  {x:69,y:68,answer:"Left ventricle"} ],
+          explain:"Atria are on top, ventricles below. The patient's right side is drawn on the viewer's left." },
+        { type:"order", q:"Order the pathway of blood, starting as it returns from the BODY.",
+          items:["Vena cava","Right atrium","Right ventricle","Pulmonary artery","Lungs","Pulmonary vein","Left atrium","Left ventricle","Aorta"],
+          explain:"Vena cava → right atrium → right ventricle → pulmonary artery → lungs → pulmonary vein → left atrium → left ventricle → aorta." },
+        { type:"mc", q:"Why does the LEFT ventricle have the thickest wall?",
+          options:["It pumps blood to the lungs","It pumps blood at high pressure around the whole body","It holds the most blood","It contains the pacemaker"], answer:1,
+          explain:"The left ventricle pumps oxygenated blood at high pressure all the way around the body." },
+        { type:"mc", q:"Where is the pacemaker located?",
+          options:["Left ventricle","Wall of the right atrium","Aorta","Pulmonary vein"], answer:1,
+          explain:"A group of cells in the wall of the right atrium acts as the pacemaker, setting heart rate." },
+        { type:"match", q:"Match each blood vessel to what it does.",
+          pairs:[["Vena cava","Deoxygenated blood from the body → heart"],
+                 ["Aorta","Oxygenated blood from heart → body"],
+                 ["Pulmonary artery","Deoxygenated blood from heart → lungs"],
+                 ["Pulmonary vein","Oxygenated blood from lungs → heart"]],
+          explain:"Pulmonary = lungs. Vena cava & pulmonary vein bring blood IN; aorta & pulmonary artery send it OUT." }
+      ]
+    },
+    {
+      id: "vessels",
+      name: "Vessel Valley Gym",
+      leader: "Leader Flow",
+      badge: "🩸 Flow Badge",
+      type: "Water",
+      tier: "Foundation",
+      tagline: "Pipes built for the job.",
+      intro: "Three vessel types, three different structures — each shaped perfectly for its pressure and purpose.",
+      lessons: [
+        {
+          title: "Arteries, veins & capillaries",
+          poke: "Arteries = armoured high-pressure pipes. Veins = wide low-pressure return roads with one-way gates. Capillaries = tiny leaky delivery lanes.",
+          facts: [
+            "<b>Arteries</b> carry blood <b>away from the heart</b> at high pressure.",
+            "<b>Veins</b> carry blood <b>towards the heart</b> at low pressure.",
+            "<b>Capillaries</b> link arteries to veins and are the <b>site of exchange</b> with body cells.",
+            "Memory tip: <b>A</b>rteries = <b>A</b>way."
+          ],
+          terms: [
+            ["Artery", "Away from the heart, high pressure."],
+            ["Vein", "Towards the heart, low pressure."],
+            ["Capillary", "Site of substance exchange with cells."]
+          ]
+        },
+        {
+          title: "Structure matches function",
+          poke: "Each vessel's build is its 'stat spread' tuned to the pressure it handles.",
+          facts: [
+            "<b>Arteries:</b> thick walls with muscle + elastic tissue (strength, stretch & recoil); <b>narrow lumen</b> keeps pressure high. <b>No valves.</b>",
+            "<b>Veins:</b> <b>large lumen</b> for big low-pressure volume; thin walls; <b>valves</b> prevent backflow.",
+            "<b>Capillaries:</b> walls <b>one cell thick</b> (short diffusion distance); very narrow lumen slows blood for exchange.",
+            "<b>Rate of blood flow</b> = volume of blood ÷ time (e.g. 2460 ml ÷ 4 min = 615 ml/min)."
+          ],
+          terms: [
+            ["Narrow lumen (artery)", "Keeps blood pressure high."],
+            ["Valves (vein)", "Stop low-pressure blood flowing backwards."],
+            ["Rate of blood flow", "volume ÷ time."]
+          ]
+        }
+      ],
+      quiz: [
+        { type:"mc", q:"Which vessel carries blood AWAY from the heart?",
+          options:["Vein","Artery","Capillary","Alveolus"], answer:1,
+          explain:"Arteries carry blood away (A = Away). Veins carry it back to the heart." },
+        { type:"label", q:"Identify these three blood vessels by their cross-section.",
+          svg: SVG_VESSELS,
+          zones:[ {x:20,y:58,answer:"Artery"},
+                  {x:52,y:58,answer:"Vein"},
+                  {x:80,y:58,answer:"Capillary"} ],
+          explain:"Artery = thick wall + small lumen; vein = thin wall + large lumen; capillary = tiny, one cell thick." },
+        { type:"categorise", q:"Sort each feature under the correct vessel.",
+          buckets:["Artery","Vein","Capillary"],
+          items:[["Thick muscular, elastic wall",0],["Narrow lumen, high pressure",0],
+                 ["Large lumen, low pressure",1],["Has valves to stop backflow",1],
+                 ["Wall one cell thick",2],["Site of substance exchange",2]],
+          explain:"Arteries: thick wall, narrow lumen. Veins: large lumen, valves. Capillaries: one-cell-thick walls, exchange site." },
+        { type:"mc", q:"2460 ml of blood flows through a vessel in 4 minutes. Rate of blood flow?",
+          options:["615 ml/min","984 ml/min","246 ml/min","9840 ml/min"], answer:0,
+          explain:"Rate = volume ÷ time = 2460 ÷ 4 = 615 ml/min." },
+        { type:"mc", q:"True or False: arteries have valves to prevent backflow.",
+          options:["True","False"], answer:1,
+          explain:"False — VEINS have valves. Artery blood pressure is high enough to keep blood moving forward." }
+      ]
+    },
+    {
+      id: "blood",
+      name: "Plasma Plaza Gym",
+      leader: "Leader Marrow",
+      badge: "🧬 Blood Badge",
+      type: "Water",
+      tier: "Foundation",
+      tagline: "Four parts, one lifeline.",
+      intro: "Blood is a tissue team of four: plasma, red cells, white cells and platelets. Learn each one's role.",
+      lessons: [
+        {
+          title: "The four components",
+          poke: "Blood is a four-member squad: a liquid courier, oxygen carriers, defenders, and repair crew.",
+          facts: [
+            "<b>Plasma:</b> straw-coloured liquid carrying cells + dissolved substances (CO₂, glucose, amino acids, urea, hormones, antibodies, ions) and heat.",
+            "<b>Red blood cells:</b> carry <b>oxygen</b>; biconcave disc (large surface area:volume), <b>no nucleus</b>, contain <b>haemoglobin</b> that binds oxygen.",
+            "<b>White blood cells:</b> defence; larger than red cells and the only blood cell with a <b>nucleus</b> (often lobed).",
+            "<b>Platelets:</b> cell fragments (no nucleus) that form <b>blood clots</b> to stop bleeding.",
+            "Exam tip: always NAME the substance plasma carries — 'nutrients'/'waste' don't score."
+          ],
+          terms: [
+            ["Plasma", "Liquid that transports dissolved substances, cells and heat."],
+            ["Red blood cell", "Biconcave, no nucleus, haemoglobin — carries oxygen."],
+            ["Platelets", "Cell fragments that clot blood."]
+          ]
+        }
+      ],
+      quiz: [
+        { type:"mc", q:"What is the main job of red blood cells?",
+          options:["Fight pathogens","Carry oxygen","Clot blood","Carry hormones"], answer:1,
+          explain:"Red blood cells carry oxygen, using haemoglobin." },
+        { type:"match", q:"Match each blood component to its role.",
+          pairs:[["Plasma","Transports dissolved substances & heat"],
+                 ["Red blood cells","Carry oxygen"],
+                 ["White blood cells","Defend against pathogens"],
+                 ["Platelets","Form blood clots"]],
+          explain:"Plasma = transport liquid; red = oxygen; white = defence; platelets = clotting." },
+        { type:"multi", q:"Select ALL features of a red blood cell.",
+          options:["Biconcave disc shape","Has a nucleus","No nucleus","Contains haemoglobin","Large surface area to volume ratio","A cell fragment"],
+          answers:[0,2,3,4],
+          explain:"Red cells are biconcave, have NO nucleus, contain haemoglobin and a large SA:V. Having a nucleus = white cell; a fragment = platelet." },
+        { type:"multi", q:"Which substances are transported in the PLASMA? Select all.",
+          options:["Carbon dioxide","Glucose","Urea","Oxygen (mainly)","Hormones","Antibodies"],
+          answers:[0,1,2,4,5],
+          explain:"Plasma carries CO₂, glucose, amino acids, urea, hormones, antibodies and ions. Oxygen is carried mainly by red blood cells, not plasma." },
+        { type:"mc", q:"Which blood cell is the only one with a nucleus?",
+          options:["Red blood cell","White blood cell","Platelet","Plasma"], answer:1,
+          explain:"White blood cells are larger and are the only blood cells with a nucleus (often lobed)." }
       ]
     }
   ],
-
-  /* ---- Flashcard "battle deck" (straight from the PDF) ---- */
   flashcards: [
-    { tier: "F", q: "Why do plants produce plant hormones?", a: "To coordinate and control growth responses." },
-    { tier: "F", q: "Define the term phototropism.", a: "The directional growth of plants in response to light, allowing shoots to grow towards light to optimise photosynthesis." },
-    { tier: "F", q: "Define the term geotropism (gravitropism).", a: "The directional growth response of plants in relation to gravity; roots grow downwards and shoots grow upwards." },
-    { tier: "F", q: "True or False? Unequal distribution of auxin results in uneven growth in shoots AND roots.", a: "True. Auxin distributes unevenly in shoots due to light direction, and in roots due to gravity direction — causing uneven growth." },
-    { tier: "F", q: "What effect does auxin have on cells in the shoots?", a: "Auxin stimulates (promotes) cell elongation in plant shoots." },
-    { tier: "F", q: "How does auxin distribution in response to light lead to phototropism?", a: "Auxin builds up on the shaded side, making those cells elongate faster than the lit side, so the shoot bends towards the light." },
-    { tier: "F", q: "True or False? Auxin inhibits the growth of cells in plant roots.", a: "True. Auxin accumulates on the lower side of roots, inhibiting cell growth so roots bend downwards towards gravity." },
-    { tier: "H", q: "What role do gibberellins have in seeds? (Higher)", a: "Gibberellins initiate seed germination." },
-    { tier: "F", q: "In a gravity-on-seedlings investigation, what is the dependent variable?", a: "The length and/or direction of growth of the new roots and shoots. (Direction of gravity is the independent variable.)" },
-    { tier: "F", q: "Which variables must be controlled when investigating the effect of light on seedlings?", a: "Direction of gravity, temperature, water availability (how damp the cotton wool is), and the type/size/age of seedlings." },
-    { tier: "F", q: "Why is a clinostat used?", a: "It cancels out the effects of gravity — so when testing light, gravity is controlled; when testing gravity, you can compare growth with and without gravity's effect." },
-    { tier: "H", q: "True or False? Auxins can be used as a weedkiller. (Higher)", a: "True. They cause broad-leaved weeds to die while narrow-leaved crops grow normally." },
-    { tier: "H", q: "How can auxins aid production of new plants? (Higher)", a: "Added to rooting powder (encourages cuttings to grow roots) and to cells in tissue culture (promotes growth)." },
-    { tier: "H", q: "True or False? Ethene prevents fruit ripening. (Higher)", a: "False. Ethene CAUSES fruit ripening; ripening can be slowed by inhibiting ethene production." },
-    { tier: "H", q: "How are gibberellins used in the plant-growing industry? (Higher)", a: "To initiate germination by ending dormancy, promote flowering, and increase fruit size." }
+    { tier:"F", q:"What is the function of the trachea?", a:"The windpipe connects the nose and mouth to the lungs/bronchi." },
+    { tier:"F", q:"What are the alveoli?", a:"Tiny air sacs surrounded by capillaries — the site of gas exchange between air and blood." },
+    { tier:"F", q:"Describe the role of the bronchi.", a:"They branch off the trachea carrying air into each lung; contain mucus to trap dust & pathogens." },
+    { tier:"F", q:"Which process takes place at the alveoli?", a:"Gas exchange (by diffusion)." },
+    { tier:"F", q:"What features make alveoli an efficient exchange surface?", a:"Large surface area, short diffusion distance (walls one cell thick), good blood supply & ventilation (steep gradient), and a moist lining." },
+    { tier:"F", q:"Why should you never say alveoli have 'thin cell walls'?", a:"AQA marks it wrong — say the walls are 'one cell thick'." },
+    { tier:"F", q:"How is a steep concentration gradient maintained at the alveoli?", a:"Good ventilation keeps O₂ high & CO₂ low in the alveoli; a good blood supply keeps blood next to them low in O₂ and high in CO₂." },
+    { tier:"F", q:"What is the function of the heart?", a:"It pumps oxygenated blood from the lungs to the body, and deoxygenated blood from the body to the lungs." },
+    { tier:"F", q:"What is a double circulatory system?", a:"Two circuits (lungs and body); blood passes through the heart twice per full circuit of the body." },
+    { tier:"F", q:"Describe the pathway of deoxygenated blood from the body.", a:"Vena cava → right atrium → valve → right ventricle → pulmonary artery → lungs." },
+    { tier:"F", q:"How does blood return from the lungs to the heart?", a:"Via the pulmonary vein, into the left atrium." },
+    { tier:"F", q:"Why does the left ventricle have a thicker wall than the right?", a:"It pumps oxygenated blood at high pressure around the whole body; the right only pumps to the nearby lungs at lower pressure." },
+    { tier:"F", q:"What do valves do in the heart?", a:"Prevent backflow — keep blood flowing one way through the chambers and vessels." },
+    { tier:"F", q:"What supplies the heart muscle with oxygenated blood?", a:"The coronary arteries." },
+    { tier:"F", q:"Where is the pacemaker and what does it do?", a:"In the wall of the right atrium; it sends electrical impulses that coordinate contraction and set heart rate." },
+    { tier:"F", q:"What is an artificial pacemaker?", a:"An implanted electrical device that corrects an irregular heartbeat by stimulating regular contraction." },
+    { tier:"F", q:"True/False: deoxygenated blood enters the LEFT side of the heart from the body.", a:"False — it enters the RIGHT side (right atrium) via the vena cava." },
+    { tier:"F", q:"Which is the only vein carrying oxygenated blood?", a:"The pulmonary vein (from lungs back to the heart)." },
+    { tier:"F", q:"What are the three types of blood vessel?", a:"Arteries, veins and capillaries." },
+    { tier:"F", q:"Function of arteries?", a:"Carry blood away from the heart at high pressure." },
+    { tier:"F", q:"How are arteries adapted to their function?", a:"Thick walls with muscle & elastic tissue, and a narrow lumen to maintain high pressure." },
+    { tier:"F", q:"Function of veins?", a:"Carry blood towards the heart at low pressure." },
+    { tier:"F", q:"How are veins adapted?", a:"Large lumen, thin walls, and valves to prevent backflow." },
+    { tier:"F", q:"Key features of capillaries?", a:"Walls one cell thick and a narrow lumen — the site of substance exchange." },
+    { tier:"F", q:"True/False: arteries have valves.", a:"False — veins have valves. Arterial pressure is high enough to keep blood moving forward." },
+    { tier:"F", q:"How do you calculate rate of blood flow?", a:"Rate = volume of blood ÷ time (e.g. 1230 ml ÷ 2 min = 615 ml/min)." },
+    { tier:"F", q:"What does plasma transport? (name substances)", a:"CO₂, glucose, amino acids, urea, hormones, antibodies and ions — plus heat and the blood cells." },
+    { tier:"F", q:"Describe red blood cells.", a:"Biconcave discs with no nucleus, packed with haemoglobin that binds oxygen; large surface area:volume for efficient diffusion." },
+    { tier:"F", q:"Describe white blood cells.", a:"Larger than red cells, the only blood cell with a nucleus (often lobed); defend against pathogens." },
+    { tier:"F", q:"What are platelets and what do they do?", a:"Cell fragments (no nucleus) involved in forming blood clots to prevent blood loss." },
+    { tier:"F", q:"How do you identify blood cells under a microscope?", a:"White cells are largest and have a nucleus; red cells are biconcave with no nucleus; platelets are the smallest fragments." }
   ]
-};
+}
+
+]; /* end TOPICS */

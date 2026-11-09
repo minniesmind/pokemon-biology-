@@ -258,3 +258,112 @@ p.lead{font-size:1.05rem;color:#333}
   .arena{flex-direction:row;}
   .mon{min-width:80px}
 }
+
+
+/* ============================================================
+   v2 ADDITIONS — multi-topic, home button, drag/drop, diagrams,
+   sound toggle, Leitner flashcards, win animations
+   ============================================================ */
+
+/* ---- top bar controls (home + sound) ---- */
+.topctrls{display:flex;gap:8px;align-items:center}
+.iconbtn{
+  font-family:var(--body);font-weight:800;cursor:pointer;border:3px solid #fff;
+  background:#ffffff22;color:#fff;border-radius:12px;padding:8px 12px;font-size:1rem;
+  transition:transform .08s, background .15s;white-space:nowrap;
+}
+.iconbtn:hover{background:#ffffff38}
+.iconbtn:active{transform:translateY(2px)}
+
+/* ---- topic (region) select ---- */
+.topicgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.topiccard{
+  border-radius:var(--radius);padding:22px;cursor:pointer;color:#fff;
+  border:4px solid #fff;box-shadow:var(--shadow);transition:transform .15s;position:relative;overflow:hidden;
+}
+.topiccard:hover{transform:translateY(-5px)}
+.topiccard.t0{background:linear-gradient(145deg,#56ab2f,#2e7d32)}
+.topiccard.t1{background:linear-gradient(145deg,#ee5a5a,#3b5ba5)}
+.topiccard .tface{font-size:3rem}
+.topiccard .tname{font-family:var(--pix);font-size:13px;margin:8px 0;text-shadow:2px 2px 0 #00000055}
+.topiccard .tsub{font-size:.82rem;opacity:.95}
+.topiccard .tblurb{font-size:.95rem;margin-top:10px}
+.topiccard .tprog{margin-top:12px;font-size:.8rem;background:#00000033;display:inline-block;padding:4px 10px;border-radius:999px}
+
+/* ---- drag & drop shared ---- */
+.chip-bank{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0;min-height:44px;
+  background:#eef3fb;border:2px dashed #b7c2d8;border-radius:12px;padding:10px}
+.dchip{
+  background:#fff;border:3px solid var(--poke-blue);border-radius:10px;padding:8px 12px;
+  font-weight:800;color:#2a4178;cursor:grab;user-select:none;font-size:.95rem;box-shadow:0 3px 0 #c7ccd6;
+}
+.dchip:active{cursor:grabbing}
+.dchip.dragging{opacity:.4}
+.dchip.placed{border-color:var(--grass);color:var(--grass-dark)}
+
+/* ordering list */
+.orderlist{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.orderitem{
+  display:flex;align-items:center;gap:10px;background:#fff;border:3px solid #cdd3de;border-radius:12px;
+  padding:10px 12px;font-weight:700;cursor:grab;user-select:none;
+}
+.orderitem .num{font-family:var(--pix);font-size:10px;color:var(--poke-blue);min-width:22px}
+.orderitem.dragging{opacity:.4;border-color:var(--poke-blue)}
+.orderitem.over{border-color:var(--poke-yellow-dark);background:#fffdf0}
+.orderitem .grip{margin-left:auto;color:#aab;font-size:1.1rem}
+
+/* categorise buckets */
+.buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px}
+.bucket{background:#f4f8ff;border:3px solid var(--poke-blue);border-radius:12px;padding:10px;min-height:90px}
+.bucket h4{margin:0 0 8px;color:var(--poke-blue-dark);font-size:.95rem;text-align:center}
+.bucket .drop{min-height:44px;display:flex;flex-direction:column;gap:6px}
+.bucket.over{background:#eef7ff;border-color:var(--poke-yellow-dark)}
+
+/* matching */
+.matchwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.matchcol{display:flex;flex-direction:column;gap:8px}
+.matchcol .hd{font-family:var(--pix);font-size:9px;color:var(--muted);text-align:center;margin-bottom:2px}
+.matchleft{background:#eef3fb;border:3px solid #cdd3de;border-radius:10px;padding:10px;font-weight:800;color:#2a4178;font-size:.92rem;display:flex;align-items:center;gap:8px}
+.matchleft .slot{margin-left:auto;min-width:70px;min-height:26px;border:2px dashed #b7c2d8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;padding:2px 4px}
+.matchleft.over .slot{border-color:var(--poke-yellow-dark);background:#fffdf0}
+
+/* diagram labelling */
+.diagramwrap{position:relative;width:min(520px,100%);margin:10px auto;background:#f7fbff;border:3px solid var(--poke-blue);border-radius:12px;padding:6px}
+.diagramwrap svg{width:100%;height:auto;display:block}
+.dropzone{
+  position:absolute;transform:translate(-50%,-50%);min-width:30px;min-height:30px;
+  border:2px dashed var(--poke-red);border-radius:50%;background:#ffffffcc;
+  display:flex;align-items:center;justify-content:center;font-family:var(--pix);font-size:9px;color:var(--poke-red);
+  padding:4px;text-align:center;
+}
+.dropzone.filled{border-style:solid;border-color:var(--grass);border-radius:10px;background:#eaffea;color:var(--grass-dark);font-family:var(--body);font-weight:800;font-size:.8rem;min-width:70px}
+.dropzone.over{background:#fffdf0;border-color:var(--poke-yellow-dark)}
+
+/* check / result states for drag questions */
+.mark-ok{outline:3px solid var(--ok) !important}
+.mark-bad{outline:3px solid var(--bad) !important}
+
+/* ---- Leitner flashcards ---- */
+.leitner-progress{width:min(560px,96%);margin:0 auto}
+.leitner-bar{height:16px;background:#dfe3ea;border:2px solid #b7bcc7;border-radius:10px;overflow:hidden}
+.leitner-bar > span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--grass),#8fe3a0);transition:width .5s}
+.leitner-stats{display:flex;justify-content:space-between;font-size:.82rem;color:#eef;margin-top:4px}
+.flashbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn.know{background:var(--grass);color:#fff;box-shadow:0 4px 0 var(--grass-dark)}
+.btn.learn{background:#ff9f43;color:#5a3000;box-shadow:0 4px 0 #d98020}
+
+/* ---- badge unlock overlay ---- */
+.overlay{position:fixed;inset:0;background:#0b1026cc;display:flex;align-items:center;justify-content:center;z-index:60;animation:pop .3s}
+.overlay .card{background:#fff;border:5px solid var(--poke-yellow);border-radius:20px;padding:28px 32px;text-align:center;max-width:90vw;box-shadow:var(--shadow)}
+.overlay .bigbadge{font-size:4.5rem;animation:badgeSpin 1s ease}
+@keyframes badgeSpin{0%{transform:scale(0) rotate(-180deg)}70%{transform:scale(1.25) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+.overlay h3{font-family:var(--pix);font-size:13px;color:var(--poke-blue);margin:10px 0}
+.sparkpulse{animation:sparkPulse .5s ease}
+@keyframes sparkPulse{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* correct answer flash on options */
+.opt.correct{animation:sparkPulse .45s ease}
+
+@media (max-width:560px){
+  .matchwrap{grid-template-columns:1fr}
+}
